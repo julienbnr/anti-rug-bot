@@ -1,0 +1,21 @@
+[
+  {
+    "type" : "SWAP",
+    "functions" : [
+      {
+        "functionName" : "swapExactETHForTokensSupportingFeeOnTransferTokens",
+        "methodId" : "0xb6f9de95"
+      }
+    ]
+  },
+
+  {
+    "type" : "REMOVE",
+    "functions" : [
+      {
+        "methodId" : "0x2195995c",
+        "functionName" : "removeLiquidityWithPermit"
+      }
+    ]
+  }
+]
