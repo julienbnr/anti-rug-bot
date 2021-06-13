@@ -34,12 +34,15 @@ const startConnection = () => {
       provider.getTransaction(txHash).then(async (tx) => {
 
         if (tx && tx.from) {
-          if (tx.from === config.devWalletAddress) {
+          if (tx.from === config.devWalletAddress) { // add potential conditions here
             console.log(`New transaction from the owner. Tx hash is ${tx.hash}`);
             const re1 = new RegExp("^0x2195995c"); // removeLiquidityWithPermit method id
-            const re2 = new RegExp("^0xe8e33700");
+            const re2 = new RegExp("^0x02751cec"); // removeLiquidityETH
+            // Todo methodId for removeLiquidity, removeLiquidityETHSupportingFeeOnTransferTokens
+            // todo removeLiquidityETHWithPermitSupportingFeeOnTransferTokens, removeLiquidityETHWithPermit
 
-            if ((re1.test(tx.data) || re2.test(tx.data))) {
+            if (re1.test(tx.data) || re2.test(tx.data)) {
+              console.log(`Remove Liquidity transaction performed ! Run emergency sell !`);
               sellTokens(tx);
             }
           }
