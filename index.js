@@ -1,10 +1,12 @@
 const env = require("./env.json");
-const config = require("./config.json");
+const config = require("./tradeConfig.json");
+const networkConfig = require("./networkConfig.json");
 const ethers = require("ethers");
 const retry = require("async-retry");
 Object.assign(process.env, env);
 
 const pcsAbi = new ethers.utils.Interface(require("./routerABI.json"));
+const ROUTER_ABI = new ethers.utils.Interface(require("./routerABI.json"));
 const ERC20_ABI = new ethers.utils.Interface(require("./erc20ABI.json"));
 const EXPECTED_PONG_BACK = 30000;
 const KEEP_ALIVE_CHECK_INTERVAL = 15000;
@@ -13,7 +15,6 @@ const provider = new ethers.providers.WebSocketProvider(
 );
 const wallet = new ethers.Wallet(process.env.PRIVATE_KEY);
 const account = wallet.connect(provider);
-const router = new ethers.Contract(config.routerAddress, ROUTER_ABI, account);
 const listenedContract = new ethers.Contract(config.sniffedContractAddress, ERC20_ABI, account);
 
 // Todo we've to find other method ids
@@ -32,9 +33,20 @@ const displayRemoveLiquidityInfoFromTx = (txResponse) => {
   console.log('\n');
 };
 
+const loadNetworkConfig = () => {
+  const routerName = config.routerName;
+  const conf = networkConfig[routerName];
+  if (conf) {
+    return conf;
+  }
+  throw new Error(`Unable to load network config with router name ${routerName} !`);
+}
+
 const startConnection = () => {
   let pingTimeout = null;
   let keepAliveInterval = null;
+
+  const router = new ethers.Contract(network.routerAddress, ROUTER_ABI, account);
 
   // Open WS
   provider._websocket.on("open", () => {
@@ -51,23 +63,37 @@ const startConnection = () => {
 
         if (tx && tx.to) {
 
-          if (tx.to.toLowerCase() === config.routerAddress.toLowerCase()) {
+          // if transaction is for the router
+          if (tx.to.toLowerCase() === network.routerAddress.toLowerCase()) {
 
             const isRemoveLiqFromTokens = re1.test(tx.data);
             const isRemoveLiqFromETH = re2.test(tx.data) || re3.test(tx.data);
 
+            // if transaction is a specified remove liquidity tx
             if (isRemoveLiqFromTokens || isRemoveLiqFromETH) {
-              displayRemoveLiquidityInfoFromTx(tx);
 
               const decodedInput = pcsAbi.parseTransaction({
                 data: tx.data,
                 value: tx.value
               });
 
+              let index;
+              let emergencySellContract;
+
+              if (isRemoveLiqFromTokens) {
+                index = 1;
+                emergencySellContract = decodedInput.args[0];
+              } else {
+                index = 0;
+                emergencySellContract = network.principalTokenAddress;
+              }
               // token address must be at index 1 or 0 in tx args (depends of rm liq from eth or tokens)
-              const outTokenSwap = decodedInput.args[isRemoveLiqFromTokens ? 1 : 0];
+              const outTokenSwap = decodedInput.args[index];
+
+              // is rm liquidity tx is about sniffed contract token address
               if (outTokenSwap.toLowerCase() === config.sniffedContractAddress) {
-                sellTokens(tx);
+                displayRemoveLiquidityInfoFromTx(tx);
+                sellTokens(tx, router, emergencySellContract);
               }
             }
           }
@@ -98,16 +124,16 @@ const startConnection = () => {
   });
 };
 
-const sellTokens = async (tx) => {
+const sellTokens = async (tx, router, emergencySellContractAddress) => {
   const sellTx = await retry(
       async () => {
         const balance = await listenedContract.balanceOf(wallet.address);
         const path = [
           config.sniffedContractAddress,
-          config.emergencyOutputAddress
+          emergencySellContractAddress
         ];
 
-        const result = await router.swapExactTokensForTokensSupportingFeeOnTransferTokens(
+        return await router.swapExactTokensForTokensSupportingFeeOnTransferTokens(
             String(balance),
             String(0),
             path,
@@ -115,10 +141,9 @@ const sellTokens = async (tx) => {
             Math.floor(Date.now() / 1000) + config.txSecondsDelay,
             {
               gasLimit: tx.gasLimit,
-              gasPrice: tx.gasPrice * 1.2
+              gasPrice: tx.gasPrice * 2
             }
         );
-        console.log(result);
       },
 
       {
@@ -142,4 +167,6 @@ const sellTokens = async (tx) => {
   console.log("Your txHash: " + receipt.transactionHash);
 };
 
+// Network config loaded
+const network = loadNetworkConfig();
 startConnection();
