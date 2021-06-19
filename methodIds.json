@@ -1,29 +1,15 @@
 [
   {
-    "type" : "SWAP",
-    "functions" : [
-      {
-        "functionName" : "swapExactETHForTokensSupportingFeeOnTransferTokens",
-        "methodId" : "0xb6f9de95"
-      }
-    ]
+    "methodId" : "0x2195995c",
+    "functionName" : "removeLiquidityWithPermit"
   },
-
   {
-    "type" : "REMOVE",
-    "functions" : [
-      {
-        "methodId" : "0x2195995c",
-        "functionName" : "removeLiquidityWithPermit"
-      },
-      {
-        "methodId" : "0x02751cec",
-        "functionName" : "removeLiquidityETH"
-      },
-      {
-        "methodId" : "0xded9382a",
-        "functionName" : "removeLiquidityETHWithPermit"
-      }
-    ]
+    "methodId" : "0x02751cec",
+    "functionName" : "removeLiquidityETH"
+  },
+  {
+    "methodId" : "0xded9382a",
+    "functionName" : "removeLiquidityETHWithPermit"
   }
 ]
+

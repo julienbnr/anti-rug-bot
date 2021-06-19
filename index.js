@@ -4,7 +4,7 @@ const ethers = require("ethers");
 const retry = require("async-retry");
 Object.assign(process.env, env);
 
-const ROUTER_ABI = new ethers.utils.Interface(require("./routerABI.json"));
+const pcsAbi = new ethers.utils.Interface(require("./routerABI.json"));
 const ERC20_ABI = new ethers.utils.Interface(require("./erc20ABI.json"));
 const EXPECTED_PONG_BACK = 30000;
 const KEEP_ALIVE_CHECK_INTERVAL = 15000;
@@ -15,6 +15,22 @@ const wallet = new ethers.Wallet(process.env.PRIVATE_KEY);
 const account = wallet.connect(provider);
 const router = new ethers.Contract(config.routerAddress, ROUTER_ABI, account);
 const listenedContract = new ethers.Contract(config.sniffedContractAddress, ERC20_ABI, account);
+
+// Todo we've to find other method ids
+const re1 = new RegExp("^0x2195995c"); // removeLiquidityWithPermit method id
+const re2 = new RegExp("^0x02751cec"); // removeLiquidityETH
+const re3 = new RegExp("^0xded9382a"); // removeLiquidityETHWithPermit
+
+const displayRemoveLiquidityInfoFromTx = (txResponse) => {
+  const now = new Date();
+  console.log(`#######################################################`);
+  console.log(`A new RemoveLiquidity transaction was found at ${now}`);
+  console.log(`Transaction hash is ${txResponse.hash}`);
+  console.log(`Transaction Gas limit : ${txResponse.gasLimit}`);
+  console.log(`Transaction Gas price : ${txResponse.gasPrice}`);
+  console.log(`#######################################################`);
+  console.log('\n');
+};
 
 const startConnection = () => {
   let pingTimeout = null;
@@ -33,17 +49,26 @@ const startConnection = () => {
     provider.on("pending", async (txHash) => {
       provider.getTransaction(txHash).then(async (tx) => {
 
-        if (tx && tx.from) {
-          if (tx.from === config.devWalletAddress) { // add potential conditions here
-            console.log(`New transaction from the owner. Tx hash is ${tx.hash}`);
-            const re1 = new RegExp("^0x2195995c"); // removeLiquidityWithPermit method id
-            const re2 = new RegExp("^0x02751cec"); // removeLiquidityETH
-            // Todo methodId for removeLiquidity, removeLiquidityETHSupportingFeeOnTransferTokens
-            // todo removeLiquidityETHWithPermitSupportingFeeOnTransferTokens, removeLiquidityETHWithPermit
+        if (tx && tx.to) {
 
-            if (re1.test(tx.data) || re2.test(tx.data)) {
-              console.log(`Remove Liquidity transaction performed ! Run emergency sell !`);
-              sellTokens(tx);
+          if (tx.to.toLowerCase() === config.routerAddress.toLowerCase()) {
+
+            const isRemoveLiqFromTokens = re1.test(tx.data);
+            const isRemoveLiqFromETH = re2.test(tx.data) || re3.test(tx.data);
+
+            if (isRemoveLiqFromTokens || isRemoveLiqFromETH) {
+              displayRemoveLiquidityInfoFromTx(tx);
+
+              const decodedInput = pcsAbi.parseTransaction({
+                data: tx.data,
+                value: tx.value
+              });
+
+              // token address must be at index 1 or 0 in tx args (depends of rm liq from eth or tokens)
+              const outTokenSwap = decodedInput.args[isRemoveLiqFromTokens ? 1 : 0];
+              if (outTokenSwap.toLowerCase() === config.sniffedContractAddress) {
+                sellTokens(tx);
+              }
             }
           }
         }
@@ -81,18 +106,19 @@ const sellTokens = async (tx) => {
           config.sniffedContractAddress,
           config.emergencyOutputAddress
         ];
-        const deadline = Date.now() + 1000 * 60 * 5;
+
         const result = await router.swapExactTokensForTokensSupportingFeeOnTransferTokens(
             String(balance),
             String(0),
             path,
             process.env.RECIPIENT,
-            deadline,
+            Math.floor(Date.now() / 1000) + config.txSecondsDelay,
             {
               gasLimit: tx.gasLimit,
-              gasPrice: ethers.utils.parseUnits("30", "gwei") // avoid this
+              gasPrice: tx.gasPrice * 1.2
             }
         );
+        console.log(result);
       },
 
       {
