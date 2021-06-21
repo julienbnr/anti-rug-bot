@@ -22,10 +22,25 @@ const re1 = new RegExp("^0x2195995c"); // removeLiquidityWithPermit method id
 const re2 = new RegExp("^0x02751cec"); // removeLiquidityETH
 const re3 = new RegExp("^0xded9382a"); // removeLiquidityETHWithPermit
 
+// Mint function
+const mintFunctionRgx = new RegExp("^0x4e6ec247");
+
 const displayRemoveLiquidityInfoFromTx = (txResponse) => {
   const now = new Date();
   console.log(`#######################################################`);
   console.log(`A new RemoveLiquidity transaction was found at ${now}`);
+  console.log(`Transaction hash is ${txResponse.hash}`);
+  console.log(`Transaction Gas limit : ${txResponse.gasLimit}`);
+  console.log(`Transaction Gas price : ${txResponse.gasPrice}`);
+  console.log(`#######################################################`);
+  console.log('\n');
+};
+
+const displayMintFunctionInfoFromTx = (txResponse, mintAmount) => {
+  const now = new Date();
+  console.log(`#######################################################`);
+  console.log(`A new mint transaction was found at ${now}`);
+  console.log(`Total amount minted is ${mintAmount}`);
   console.log(`Transaction hash is ${txResponse.hash}`);
   console.log(`Transaction Gas limit : ${txResponse.gasLimit}`);
   console.log(`Transaction Gas price : ${txResponse.gasPrice}`);
@@ -96,6 +111,30 @@ const startConnection = () => {
                 sellTokens(tx, router, emergencySellContract);
               }
             }
+          }
+
+          if (tx.to.toLowerCase() === config.sniffedContractAddress.toLowerCase()) {
+
+            // If mint() function is invoked
+            if (mintFunctionRgx) {
+
+              const decodedInput = pcsAbi.parseTransaction({
+                data: tx.data,
+                value: tx.value
+              });
+
+              const amountMinted = parseInt(
+                  ethers.utils.formatEther(decodedInput.args[1])
+              );
+
+              // if the dev minted more than 50% of the circulating supply
+              const mintSellTriggerAmount = config.initialSupplyInEther * 0.5;
+              if (amountMinted > mintSellTriggerAmount) {
+                displayMintFunctionInfoFromTx(tx, mintSellTriggerAmount);
+                sellTokens(tx, router, network.stableCoinAddress);
+              }
+            }
+
           }
         }
       });

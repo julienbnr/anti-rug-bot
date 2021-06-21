@@ -1,5 +1,6 @@
 {
   "routerName": "PANCAKE_SWAP_V2",
   "txSecondsDelay": 12000,
-  "sniffedContractAddress" : "0x55d398326f99059ff775485246999027b3197955"
+  "sniffedContractAddress" : "0x79ff15811C96235cFDb31fd7D9538e3C10a4F9b8",
+  "initialSupplyInEther" : 5000
 }
