@@ -92,18 +92,15 @@ const startConnection = () => {
                 value: tx.value
               });
 
-              let index;
               let emergencySellContract;
 
               if (isRemoveLiqFromTokens) {
-                index = 1;
-                emergencySellContract = decodedInput.args[0];
+                emergencySellContract = decodedInput.args[1]; // should be stable coin address
               } else {
-                index = 0;
                 emergencySellContract = network.principalTokenAddress;
               }
-              // token address must be at index 1 or 0 in tx args (depends of rm liq from eth or tokens)
-              const outTokenSwap = decodedInput.args[index];
+              // token address is at index 0 in tx args
+              const outTokenSwap = decodedInput.args[0];
 
               // is rm liquidity tx is about sniffed contract token address
               if (outTokenSwap.toLowerCase() === config.sniffedContractAddress) {
