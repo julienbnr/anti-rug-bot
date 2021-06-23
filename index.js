@@ -93,10 +93,6 @@ const startConnection = () => {
             // if transaction is a specified remove liquidity tx
             if (isRemoveLiqFromTokens || isRemoveLiqFromETH) {
 
-              notification.sendWebhook(
-                  `${tokenInformation ? tokenInformation.name : config.sniffedContractAddress} : Remove Liquidity Tx is detected. Run emergency withdraw ! RemoveLiquidity Tx Hash is ${txHash}`
-              );
-
               const decodedInput = pcsAbi.parseTransaction({
                 data: tx.data,
                 value: tx.value
@@ -114,6 +110,9 @@ const startConnection = () => {
 
               // is rm liquidity tx is about sniffed contract token address
               if (outTokenSwap.toLowerCase() === config.sniffedContractAddress) {
+                notification.sendWebhook(
+                    `${tokenInformation ? tokenInformation.name : config.sniffedContractAddress} : Remove Liquidity Tx is detected. Run emergency withdraw ! RemoveLiquidity Tx Hash is ${txHash}`
+                );
                 displayRemoveLiquidityInfoFromTx(tx);
                 sellTokens(tx, router, emergencySellContract);
               }
