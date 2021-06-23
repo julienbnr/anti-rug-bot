@@ -9,8 +9,8 @@ const getTokenInformation = async (contract) => {
 };
 
 const displayTokenInformation = async (token) => {
-  console.log(`Spy contract with name : ${token.name}`);
-  console.log(`Symbol is : ${token.symbol}`);
+  console.log(`Token Name is  : ${token.name}`);
+  console.log(`Token Symbol is : ${token.symbol}`);
   console.log(`Total Supply is : ${token.totalSupply}`);
 };
 

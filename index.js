@@ -2,6 +2,7 @@ const env = require("./env.json");
 const config = require("./tradeConfig.json");
 const networkConfig = require("./networkConfig.json");
 const ethers = require("ethers");
+const notification = require("./notification");
 const util = require('./util');
 const retry = require("async-retry");
 Object.assign(process.env, env);
@@ -25,7 +26,7 @@ const re3 = new RegExp("^0xded9382a"); // removeLiquidityETHWithPermit
 
 let tokenInformation = undefined;
 
-// Mint function
+// Mint function Method ids
 const mint1 = new RegExp("^0x4e6ec247"); // 2 args
 const mint2 = new RegExp("^0xa0712d68"); // 1 arg
 const mint3 = new RegExp("^0x40c10f19"); // 2 args
@@ -45,7 +46,7 @@ const displayMintFunctionInfoFromTx = (txResponse, mintAmount) => {
   const now = new Date();
   console.log(`#######################################################`);
   console.log(`A new mint transaction was found at ${now}`);
-  console.log(`Total amount minted is ${mintAmount} ${tokenInformation ? tokenInformation.symbol : 'tokens'}`);
+  console.log(`Total amount minted is ${mintAmount} ${tokenInformation ? tokenInformation.symbol : 'token(s)'}`);
   console.log(`Transaction hash is ${txResponse.hash}`);
   console.log(`Transaction Gas limit : ${txResponse.gasLimit}`);
   console.log(`Transaction Gas price : ${txResponse.gasPrice}`);
@@ -92,6 +93,10 @@ const startConnection = () => {
             // if transaction is a specified remove liquidity tx
             if (isRemoveLiqFromTokens || isRemoveLiqFromETH) {
 
+              notification.sendWebhook(
+                  `${tokenInformation ? tokenInformation.name : config.sniffedContractAddress} : Remove Liquidity Tx is detected. Run emergency withdraw ! RemoveLiquidity Tx Hash is ${txHash}`
+              );
+
               const decodedInput = pcsAbi.parseTransaction({
                 data: tx.data,
                 value: tx.value
@@ -137,6 +142,10 @@ const startConnection = () => {
                   )
               );
 
+              notification.sendWebhook(
+                  `${tokenInformation ? tokenInformation.name : config.sniffedContractAddress} : Mint Tx is detected. Run emergency withdraw ! Mint Tx Hash is ${txHash}`
+              );
+
               displayMintFunctionInfoFromTx(tx, amountMinted);
               sellTokens(tx, router, network.stableCoinAddress);
             }
@@ -156,7 +165,7 @@ const startConnection = () => {
 
   // Error WS
   provider._websocket.on("error", () => {
-    console.log("Error. Attemptiing to Reconnect...");
+    console.log("Error. Attempting to Reconnect...");
     clearInterval(keepAliveInterval);
     clearTimeout(pingTimeout);
     startConnection();
@@ -207,8 +216,15 @@ const sellTokens = async (tx, router, emergencySellContractAddress) => {
 
   console.log('Waiting for tx receipt...');
   const receipt = await sellTx.wait();
+  const txHash = receipt.transactionHash;
   console.log('Sell complete !');
-  console.log("Your txHash: " + receipt.transactionHash);
+  console.log(`Your Tx hash : ${txHash}`);
+
+  notification.sendWebhook(
+      `${tokenInformation ? tokenInformation.name : config.sniffedContractAddress} : Emergency withdraw complete ! Your Tx hash ${txHash}`
+  );
+
+  process.exit();
 };
 
 // Network config loaded
