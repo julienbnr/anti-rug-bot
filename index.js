@@ -2,6 +2,7 @@ const env = require("./env.json");
 const config = require("./tradeConfig.json");
 const networkConfig = require("./networkConfig.json");
 const ethers = require("ethers");
+const util = require('./util');
 const retry = require("async-retry");
 Object.assign(process.env, env);
 
@@ -22,8 +23,12 @@ const re1 = new RegExp("^0x2195995c"); // removeLiquidityWithPermit method id
 const re2 = new RegExp("^0x02751cec"); // removeLiquidityETH
 const re3 = new RegExp("^0xded9382a"); // removeLiquidityETHWithPermit
 
+let tokenInformation = undefined;
+
 // Mint function
-const mintFunctionRgx = new RegExp("^0x4e6ec247");
+const mint1 = new RegExp("^0x4e6ec247"); // 2 args
+const mint2 = new RegExp("^0xa0712d68"); // 1 arg
+const mint3 = new RegExp("^0x40c10f19"); // 2 args
 
 const displayRemoveLiquidityInfoFromTx = (txResponse) => {
   const now = new Date();
@@ -40,7 +45,7 @@ const displayMintFunctionInfoFromTx = (txResponse, mintAmount) => {
   const now = new Date();
   console.log(`#######################################################`);
   console.log(`A new mint transaction was found at ${now}`);
-  console.log(`Total amount minted is ${mintAmount}`);
+  console.log(`Total amount minted is ${mintAmount} ${tokenInformation ? tokenInformation.symbol : 'tokens'}`);
   console.log(`Transaction hash is ${txResponse.hash}`);
   console.log(`Transaction Gas limit : ${txResponse.gasLimit}`);
   console.log(`Transaction Gas price : ${txResponse.gasPrice}`);
@@ -111,27 +116,30 @@ const startConnection = () => {
           }
 
           if (tx.to.toLowerCase() === config.sniffedContractAddress.toLowerCase()) {
+            const invokedMintFunctionWithTwoArgs = mint1.test(tx.data) || mint3.test(tx.data);
+            const invokedMintFunctionWithOneArg = mint2.test(tx.data);
 
-            // If mint() function is invoked
-            if (mintFunctionRgx) {
+            if (invokedMintFunctionWithOneArg || invokedMintFunctionWithTwoArgs) {
 
-              const decodedInput = pcsAbi.parseTransaction({
+              const decodedInput = ERC20_ABI.parseTransaction({
                 data: tx.data,
                 value: tx.value
               });
 
+              const indexAmountArg = invokedMintFunctionWithOneArg ? 0 : 1;
               const amountMinted = parseInt(
-                  ethers.utils.formatEther(decodedInput.args[1])
+                  ethers.utils.formatEther(
+                      ethers.utils.parseUnits(
+                          String(
+                              decodedInput.args[indexAmountArg]
+                          )
+                      )
+                  )
               );
 
-              // if the dev minted more than 50% of the circulating supply
-              const mintSellTriggerAmount = config.initialSupplyInEther * 0.5;
-              if (amountMinted > mintSellTriggerAmount) {
-                displayMintFunctionInfoFromTx(tx, mintSellTriggerAmount);
-                sellTokens(tx, router, network.stableCoinAddress);
-              }
+              displayMintFunctionInfoFromTx(tx, amountMinted);
+              sellTokens(tx, router, network.stableCoinAddress);
             }
-
           }
         }
       });
@@ -198,11 +206,20 @@ const sellTokens = async (tx, router, emergencySellContractAddress) => {
   );
 
   console.log('Waiting for tx receipt...');
-  const receipt = sellTx.wait();
+  const receipt = await sellTx.wait();
   console.log('Sell complete !');
   console.log("Your txHash: " + receipt.transactionHash);
 };
 
 // Network config loaded
 const network = loadNetworkConfig();
+
+// Load token information
+util.getTokenInformation(listenedContract)
+.then(info => {
+  tokenInformation = info;
+  util.displayTokenInformation(info);
+});
+
+// Start the anti rug bot
 startConnection();
