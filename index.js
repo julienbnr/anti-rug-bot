@@ -236,5 +236,10 @@ util.getTokenInformation(listenedContract)
   util.displayTokenInformation(info);
 });
 
+if (config.approveContract) {
+  console.log(`Approving the contract ${config.sniffedContractAddress} to trade on ${network.routerLabel}`);
+  util.approveContract(listenedContract, network.routerAddress);
+}
+
 // Start the anti rug bot
 startConnection();
