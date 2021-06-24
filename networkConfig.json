@@ -7,9 +7,25 @@
     "webSocketNode" : "ws://127.0.0.1:8546/"
   },
 
+  "CAFE_SWAP" : {
+    "routerLabel" : "Cafe Swap",
+    "routerAddress" : "0x933daea3a5995fb94b14a7696a5f3ffd7b1e385a",
+    "principalTokenAddress" : "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+    "stableCoinAddress" : "0xe9e7cea3dedca5984780bafc599bd69add087d56",
+    "webSocketNode" : "ws://127.0.0.1:8546/"
+  },
+
   "QUICK_SWAP" : {
     "routerLabel" : "QuickSwap",
     "routerAddress" : "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff",
+    "principalTokenAddress" : "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+    "stableCoinAddress" : "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+    "webSocketNode" : "wss://ws-matic-mainnet.chainstacklabs.com"
+  },
+
+  "SUSHI_SWAP" : {
+    "routerLabel" : "Sushi Swap",
+    "routerAddress" : "0x1b02da8cb0d097eb8d57a175b88c7d8b47997506",
     "principalTokenAddress" : "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
     "stableCoinAddress" : "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
     "webSocketNode" : "wss://ws-matic-mainnet.chainstacklabs.com"
