@@ -1,20 +1,22 @@
 const env = require("./env.json");
 const config = require("./tradeConfig.json");
 const networkConfig = require("./networkConfig.json");
+const util = require('./util');
+
+// Network config loaded
+const network = util.loadNetworkConfig(config, networkConfig);
+
 const ethers = require("ethers");
 const notification = require("./notification");
-const util = require('./util');
 const retry = require("async-retry");
 Object.assign(process.env, env);
 
-const pcsAbi = new ethers.utils.Interface(require("./routerABI.json"));
 const ROUTER_ABI = new ethers.utils.Interface(require("./routerABI.json"));
 const ERC20_ABI = new ethers.utils.Interface(require("./erc20ABI.json"));
 const EXPECTED_PONG_BACK = 30000;
 const KEEP_ALIVE_CHECK_INTERVAL = 15000;
-const provider = new ethers.providers.WebSocketProvider(
-    process.env.BSC_NODE_WSS
-);
+const provider = new ethers.providers.WebSocketProvider(network.webSocketNode);
+
 const wallet = new ethers.Wallet(process.env.PRIVATE_KEY);
 const account = wallet.connect(provider);
 const listenedContract = new ethers.Contract(config.sniffedContractAddress, ERC20_ABI, account);
@@ -54,15 +56,6 @@ const displayMintFunctionInfoFromTx = (txResponse, mintAmount) => {
   console.log('\n');
 };
 
-const loadNetworkConfig = () => {
-  const routerName = config.routerName;
-  const conf = networkConfig[routerName];
-  if (conf) {
-    return conf;
-  }
-  throw new Error(`Unable to load network config with router name ${routerName} !`);
-}
-
 const startConnection = () => {
   let pingTimeout = null;
   let keepAliveInterval = null;
@@ -93,7 +86,7 @@ const startConnection = () => {
             // if transaction is a specified remove liquidity tx
             if (isRemoveLiqFromTokens || isRemoveLiqFromETH) {
 
-              const decodedInput = pcsAbi.parseTransaction({
+              const decodedInput = ROUTER_ABI.parseTransaction({
                 data: tx.data,
                 value: tx.value
               });
@@ -226,14 +219,13 @@ const sellTokens = async (tx, router, emergencySellContractAddress) => {
   process.exit();
 };
 
-// Network config loaded
-const network = loadNetworkConfig();
-
 // Load token information
 util.getTokenInformation(listenedContract)
 .then(info => {
   tokenInformation = info;
   util.displayTokenInformation(info);
+  console.log(`Listen ${tokenInformation.symbol} transactions on router ${network.routerLabel}`);
+  console.log(`Listen blockchain transactions with WSS node : ${network.webSocketNode}`);
 });
 
 if (config.approveContract) {

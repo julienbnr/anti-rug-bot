@@ -28,6 +28,16 @@ const approveContract = async (contract, address) => {
   console.log(`Contract is now approved ! Your Tx Hash ${result.transactionHash}`);
 };
 
+const loadNetworkConfig = (config, networkConfig) => {
+  const routerName = config.routerName;
+  const conf = networkConfig[routerName];
+  if (conf) {
+    return conf;
+  }
+  throw new Error(`Unable to load network config with router name ${routerName} !`);
+}
+
 exports.approveContract = approveContract;
 exports.getTokenInformation = getTokenInformation;
 exports.displayTokenInformation = displayTokenInformation;
+exports.loadNetworkConfig = loadNetworkConfig;
