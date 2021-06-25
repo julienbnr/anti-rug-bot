@@ -4,5 +4,6 @@
   "function totalSupply() external view returns (uint256)",
   "function mint(uint256 amount) public",
   "function mint(address user, uint256 amount) public",
-  "function approve(address _spender, uint256 amount) public returns (bool success)"
+  "function approve(address _spender, uint256 amount) public returns (bool success)",
+  "function balanceOf(address account) external view returns (uint256)"
 ]
