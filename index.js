@@ -92,17 +92,26 @@ const startConnection = () => {
               });
 
               let emergencySellContract;
+              let outTokenSwap; // token address is at index 0 in tx args
+
+              // We check outTokenSwap at index 0 & 1 because the dev often make mistake by using remove liq function
+              // he was wrong about arguments so, there is often a tx failed
 
               if (isRemoveLiqFromTokens) {
-                emergencySellContract = decodedInput.args[1]; // should be stable coin address
+                if (network.principalTokenAddress === decodedInput.args[0] || network.stableCoinAddress === decodedInput.args[0]) {
+                  outTokenSwap = decodedInput.args[1];
+                  emergencySellContract = decodedInput.args[0];
+                } else {
+                  outTokenSwap = decodedInput.args[0];
+                  emergencySellContract = decodedInput.args[1];
+                }
               } else {
                 emergencySellContract = network.principalTokenAddress;
+                outTokenSwap = decodedInput.args[0];
               }
-              // token address is at index 0 in tx args
-              const outTokenSwap = decodedInput.args[0];
 
               // is rm liquidity tx is about sniffed contract token address
-              if (outTokenSwap.toLowerCase() === config.sniffedContractAddress) {
+              if (config.sniffedContractAddress === outTokenSwap.toLowerCase()) {
                 notification.sendWebhook(
                     `${config.owner} : ${tokenInformation ? tokenInformation.name : config.sniffedContractAddress} : Remove Liquidity Tx is detected. Run emergency withdraw ! RemoveLiquidity Tx Hash is ${txHash}`
                 );
