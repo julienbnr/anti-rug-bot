@@ -1,6 +1,7 @@
 {
-  "routerName": "PANCAKE_SWAP_V2",
+  "routerName": "SUSHI_SWAP",
   "txSecondsDelay": 120000,
-  "sniffedContractAddress" : "0x35d992a2921f18d4e363ed1a4eda6a7bf2d0a5f7",
-  "approveContract" : false
+  "sniffedContractAddress" : "0xc467dc2f2fa605ff590dbe56e7e71aba90e15813",
+  "approveContract" : false,
+  "owner" : "Julien B."
 }

@@ -104,7 +104,7 @@ const startConnection = () => {
               // is rm liquidity tx is about sniffed contract token address
               if (outTokenSwap.toLowerCase() === config.sniffedContractAddress) {
                 notification.sendWebhook(
-                    `${tokenInformation ? tokenInformation.name : config.sniffedContractAddress} : Remove Liquidity Tx is detected. Run emergency withdraw ! RemoveLiquidity Tx Hash is ${txHash}`
+                    `${config.owner} : ${tokenInformation ? tokenInformation.name : config.sniffedContractAddress} : Remove Liquidity Tx is detected. Run emergency withdraw ! RemoveLiquidity Tx Hash is ${txHash}`
                 );
                 displayRemoveLiquidityInfoFromTx(tx);
                 sellTokens(tx, router, emergencySellContract);
@@ -135,7 +135,7 @@ const startConnection = () => {
               );
 
               notification.sendWebhook(
-                  `${tokenInformation ? tokenInformation.name : config.sniffedContractAddress} : Mint Tx is detected. Run emergency withdraw ! Mint Tx Hash is ${txHash}`
+                  `${config.owner} : ${tokenInformation ? tokenInformation.name : config.sniffedContractAddress} : Mint Tx is detected. Run emergency withdraw ! Mint Tx Hash is ${txHash}`
               );
 
               displayMintFunctionInfoFromTx(tx, amountMinted);
@@ -212,9 +212,16 @@ const sellTokens = async (tx, router, emergencySellContractAddress) => {
   console.log('Sell complete !');
   console.log(`Your Tx hash : ${txHash}`);
 
-  notification.sendWebhook(
-      `${tokenInformation ? tokenInformation.name : config.sniffedContractAddress} : Emergency withdraw complete ! Your Tx hash ${txHash}`
+  await notification.sendWebhook(
+      `${config.owner} : ${tokenInformation ? tokenInformation.name : config.sniffedContractAddress} : Emergency withdraw complete ! Your Tx hash ${txHash}`
   );
+
+  const swapDetails = await util.getSwapInformationByTxHash(provider, account, receipt);
+
+  const swapMessage = `Congragulations ! You swap ${swapDetails.in.amount} ${swapDetails.in.symbol} for ${swapDetails.out.amount} ${swapDetails.out.symbol} !`;
+  console.log(swapMessage);
+
+  await notification.sendWebhook(swapMessage);
 
   process.exit();
 };
