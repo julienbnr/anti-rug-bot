@@ -1,19 +1,19 @@
-const env = require("./env.json");
-const config = require("./tradeConfig.json");
-const networkConfig = require("./networkConfig.json");
-const util = require('./util');
-const constant = require('./constant');
+const env = require("./json/env.json");
+const config = require("./json/tradeConfig.json");
+const networkConfig = require("./json/networkConfig.json");
+const util = require('./scripts/util');
+const constant = require('./scripts/constant');
 
 // Network config loaded
 const network = util.loadNetworkConfig(config, networkConfig);
 
 const ethers = require("ethers");
-const notification = require("./notification");
+const notification = require("./scripts/notification");
 const retry = require("async-retry");
 Object.assign(process.env, env);
 
-const ROUTER_ABI = new ethers.utils.Interface(require("./routerABI.json"));
-const ERC20_ABI = new ethers.utils.Interface(require("./erc20ABI.json"));
+const ROUTER_ABI = new ethers.utils.Interface(require("./json/routerABI.json"));
+const ERC20_ABI = new ethers.utils.Interface(require("./json/erc20ABI.json"));
 const EXPECTED_PONG_BACK = 30000;
 const KEEP_ALIVE_CHECK_INTERVAL = 15000;
 const provider = new ethers.providers.WebSocketProvider(network.webSocketNode);
@@ -23,29 +23,6 @@ const account = wallet.connect(provider);
 const listenedContract = new ethers.Contract(config.sniffedContractAddress, ERC20_ABI, account);
 
 let tokenInformation = undefined;
-
-const displayRemoveLiquidityInfoFromTx = (txResponse) => {
-  const now = new Date();
-  console.log(`#######################################################`);
-  console.log(`A new RemoveLiquidity transaction was found at ${now}`);
-  console.log(`Transaction hash is ${txResponse.hash}`);
-  console.log(`Transaction Gas limit : ${txResponse.gasLimit}`);
-  console.log(`Transaction Gas price : ${txResponse.gasPrice}`);
-  console.log(`#######################################################`);
-  console.log('\n');
-};
-
-const displayMintFunctionInfoFromTx = (txResponse, mintAmount) => {
-  const now = new Date();
-  console.log(`#######################################################`);
-  console.log(`A new mint transaction was found at ${now}`);
-  console.log(`Total amount minted is ${mintAmount} ${tokenInformation ? tokenInformation.symbol : 'token(s)'}`);
-  console.log(`Transaction hash is ${txResponse.hash}`);
-  console.log(`Transaction Gas limit : ${txResponse.gasLimit}`);
-  console.log(`Transaction Gas price : ${txResponse.gasPrice}`);
-  console.log(`#######################################################`);
-  console.log('\n');
-};
 
 const startConnection = () => {
   let pingTimeout = null;
@@ -106,7 +83,7 @@ const startConnection = () => {
                 notification.sendWebhook(
                     `${config.owner} : ${tokenInformation ? tokenInformation.name : config.sniffedContractAddress} : Remove Liquidity Tx is detected. Run emergency withdraw ! RemoveLiquidity Tx Hash is ${txHash}`
                 );
-                displayRemoveLiquidityInfoFromTx(tx);
+                util.displayRemoveLiquidityInfoFromTx(tx);
                 sellTokens(tx, router, emergencySellContract);
               }
             }
@@ -138,7 +115,7 @@ const startConnection = () => {
                   `${config.owner} : ${tokenInformation ? tokenInformation.name : config.sniffedContractAddress} : Mint Tx is detected. Run emergency withdraw ! Mint Tx Hash is ${txHash}`
               );
 
-              displayMintFunctionInfoFromTx(tx, amountMinted);
+              util.displayMintFunctionInfoFromTx(tx, amountMinted);
               sellTokens(tx, router, network.stableCoinAddress);
             }
           }

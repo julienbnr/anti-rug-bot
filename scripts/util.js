@@ -1,7 +1,7 @@
 const abiDecoder = require('abi-decoder');
 const ethers = require("ethers");
-const TX_ABI = require('./json/transactionABI.json');
-const ERC_20_ABI = require('./erc20ABI.json');
+const TX_ABI = require('../json/transactionABI.json');
+const ERC_20_ABI = require('../json/erc20ABI.json');
 
 abiDecoder.addABI(TX_ABI);
 
@@ -87,8 +87,33 @@ const getSwapInformationByTxHash = async (provider, account, receipt) => {
   return result;
 };
 
+const displayMintFunctionInfoFromTx = (txResponse, mintAmount) => {
+  const now = new Date();
+  console.log(`#######################################################`);
+  console.log(`A new mint transaction was found at ${now}`);
+  console.log(`Total amount minted is ${mintAmount} ${tokenInformation ? tokenInformation.symbol : 'token(s)'}`);
+  console.log(`Transaction hash is ${txResponse.hash}`);
+  console.log(`Transaction Gas limit : ${txResponse.gasLimit}`);
+  console.log(`Transaction Gas price : ${txResponse.gasPrice}`);
+  console.log(`#######################################################`);
+  console.log('\n');
+};
+
+const displayRemoveLiquidityInfoFromTx = (txResponse) => {
+  const now = new Date();
+  console.log(`#######################################################`);
+  console.log(`A new RemoveLiquidity transaction was found at ${now}`);
+  console.log(`Transaction hash is ${txResponse.hash}`);
+  console.log(`Transaction Gas limit : ${txResponse.gasLimit}`);
+  console.log(`Transaction Gas price : ${txResponse.gasPrice}`);
+  console.log(`#######################################################`);
+  console.log('\n');
+};
+
 exports.approveContract = approveContract;
 exports.getTokenInformation = getTokenInformation;
 exports.displayTokenInformation = displayTokenInformation;
 exports.loadNetworkConfig = loadNetworkConfig;
 exports.getSwapInformationByTxHash = getSwapInformationByTxHash;
+exports.displayMintFunctionInfoFromTx = displayMintFunctionInfoFromTx;
+exports.displayRemoveLiquidityInfoFromTx = displayRemoveLiquidityInfoFromTx;
