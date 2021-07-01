@@ -2,6 +2,7 @@ const env = require("./env.json");
 const config = require("./tradeConfig.json");
 const networkConfig = require("./networkConfig.json");
 const util = require('./util');
+const constant = require('./constant');
 
 // Network config loaded
 const network = util.loadNetworkConfig(config, networkConfig);
@@ -21,17 +22,7 @@ const wallet = new ethers.Wallet(process.env.PRIVATE_KEY);
 const account = wallet.connect(provider);
 const listenedContract = new ethers.Contract(config.sniffedContractAddress, ERC20_ABI, account);
 
-// Todo we've to find other method ids
-const re1 = new RegExp("^0x2195995c"); // removeLiquidityWithPermit method id
-const re2 = new RegExp("^0x02751cec"); // removeLiquidityETH
-const re3 = new RegExp("^0xded9382a"); // removeLiquidityETHWithPermit
-
 let tokenInformation = undefined;
-
-// Mint function Method ids
-const mint1 = new RegExp("^0x4e6ec247"); // 2 args
-const mint2 = new RegExp("^0xa0712d68"); // 1 arg
-const mint3 = new RegExp("^0x40c10f19"); // 2 args
 
 const displayRemoveLiquidityInfoFromTx = (txResponse) => {
   const now = new Date();
@@ -80,8 +71,8 @@ const startConnection = () => {
           // if transaction is for the router
           if (tx.to.toLowerCase() === network.routerAddress.toLowerCase()) {
 
-            const isRemoveLiqFromTokens = re1.test(tx.data);
-            const isRemoveLiqFromETH = re2.test(tx.data) || re3.test(tx.data);
+            const isRemoveLiqFromTokens = constant.RM_LIQUIDITY_1.test(tx.data);
+            const isRemoveLiqFromETH = constant.RM_LIQUIDITY_2.test(tx.data) || constant.RM_LIQUIDITY_3.test(tx.data);
 
             // if transaction is a specified remove liquidity tx
             if (isRemoveLiqFromTokens || isRemoveLiqFromETH) {
@@ -122,8 +113,8 @@ const startConnection = () => {
           }
 
           if (tx.to.toLowerCase() === config.sniffedContractAddress.toLowerCase()) {
-            const invokedMintFunctionWithTwoArgs = mint1.test(tx.data) || mint3.test(tx.data);
-            const invokedMintFunctionWithOneArg = mint2.test(tx.data);
+            const invokedMintFunctionWithTwoArgs = constant.MINT_1.test(tx.data) || constant.MINT_3.test(tx.data);
+            const invokedMintFunctionWithOneArg = constant.MINT_2.test(tx.data);
 
             if (invokedMintFunctionWithOneArg || invokedMintFunctionWithTwoArgs) {
 
