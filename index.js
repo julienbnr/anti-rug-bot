@@ -55,7 +55,7 @@ const startConnection = () => {
 
   // Open WS
   provider._websocket.on("open", () => {
-    console.log("Anti rug bot has begun...\n");
+    console.log(`${config.owner} load the anti rug bot !`);
     keepAliveInterval = setInterval(() => {
       provider._websocket.ping();
       pingTimeout = setTimeout(() => {
