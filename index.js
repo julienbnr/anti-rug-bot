@@ -49,7 +49,9 @@ const startConnection = () => {
           if (tx.to.toLowerCase() === network.routerAddress.toLowerCase()) {
 
             const isRemoveLiqFromTokens = constant.RM_LIQUIDITY_1.test(tx.data);
-            const isRemoveLiqFromETH = constant.RM_LIQUIDITY_2.test(tx.data) || constant.RM_LIQUIDITY_3.test(tx.data);
+            const isRemoveLiqFromETH = constant.RM_LIQUIDITY_2.test(tx.data)
+                || constant.RM_LIQUIDITY_3.test(tx.data)
+                || constant.RM_LIQUIDITY_4.test(tx.data);
 
             // if transaction is a specified remove liquidity tx
             if (isRemoveLiqFromTokens || isRemoveLiqFromETH) {
@@ -115,7 +117,7 @@ const startConnection = () => {
                   `${config.owner} : ${tokenInformation ? tokenInformation.name : config.sniffedContractAddress} : Mint Tx is detected. Run emergency withdraw ! Mint Tx Hash is ${txHash}`
               );
 
-              util.displayMintFunctionInfoFromTx(tx, amountMinted);
+              util.displayMintFunctionInfoFromTx(tx, tokenInformation, amountMinted);
               sellTokens(tx, router, network.stableCoinAddress);
             }
           }
