@@ -59,8 +59,8 @@ const getSwapInformationByTxHash = async (provider, account, receipt) => {
     const firstTransferTokenName = await firstTransferContract.name();
 
     const lastTransferContract = new ethers.Contract(lastTransfer.address, ERC_20_ABI, account);
-    const lastTransferTokenSymbol = await lastTransferContract.methods.symbol().call();
-    const lastTransferTokenName = await lastTransferContract.methods.name().call();
+    const lastTransferTokenSymbol = await lastTransferContract.symbol();
+    const lastTransferTokenName = await lastTransferContract.name();
 
     const amountInGwei = firstTransfer.events.filter(ev => ev.name === 'value').map(ev => ev.value)[0];
 
@@ -87,7 +87,7 @@ const getSwapInformationByTxHash = async (provider, account, receipt) => {
   return result;
 };
 
-const displayMintFunctionInfoFromTx = (txResponse, mintAmount) => {
+const displayMintFunctionInfoFromTx = (txResponse, tokenInformation, mintAmount) => {
   const now = new Date();
   console.log(`#######################################################`);
   console.log(`A new mint transaction was found at ${now}`);
